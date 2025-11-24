@@ -1,1 +1,38 @@
+/* =====================================================================================
+    SECTION: CATEGORY PART-TO-WHOLE ANALYSIS (POSTGRESQL)
+    -------------------------------------------------------------------------------------
+    Purpose:
+        • Calculate total sales by product category
+        • Calculate overall sales across all categories
+        • Determine each category’s fractional contribution
+        • Convert fraction into % contribution for dashboarding
+
+    Output Columns:
+        - category
+        - total_sales
+        - whole_sales (overall revenue)
+        - fraction (decimal)
+        - percent_contribution (formatted percentage)
+
+====================================================================================== */
+
+WITH part_to_whole AS (
+    SELECT
+        p.category,
+        SUM(s.sales_amount) AS total_sales
+    FROM gold.fact_sales s
+    LEFT JOIN gold.dim_products p
+        ON p.product_key = s.product_key
+    GROUP BY p.category
+)
+
+SELECT 
+    category,
+    total_sales,
+    SUM(total_sales) OVER () AS whole_sales,
+    ROUND(total_sales / SUM(total_sales) OVER (), 4) AS fraction,
+    CONCAT(ROUND((total_sales * 100.0) / SUM(total_sales) OVER (), 2), '%') 
+        AS percent_contribution
+FROM part_to_whole
+ORDER BY total_sales DESC;
 
